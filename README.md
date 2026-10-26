@@ -116,6 +116,15 @@ pnpm dev                    # http://localhost:5173
 
 Recomenda-se um token R2 com permissão apenas de escrita de objetos no bucket de relatórios.
 
+#### Configurando o Cloudflare R2
+
+1. No painel da Cloudflare, em **R2 Object Storage**, crie um bucket dedicado (por exemplo, `brev-ly-reports`).
+2. Habilite o acesso público do bucket pela **Public Development URL** (`r2.dev`) ou por um domínio customizado, e use essa URL em `CLOUDFLARE_PUBLIC_URL`.
+3. Em **Manage API tokens**, crie um token com a permissão **Object Read & Write** aplicada somente a esse bucket. O painel exibe o `Access Key ID` e o `Secret Access Key` uma única vez.
+4. Preencha as variáveis `CLOUDFLARE_*` no `server/.env` (nunca versionado) e reinicie a API. `CLOUDFLARE_ENDPOINT` não é necessário para o R2.
+
+A URL `r2.dev` tem limite de taxa e é indicada pela Cloudflare para desenvolvimento; em produção, prefira um domínio customizado.
+
 ### `web/.env`
 
 | Variável | Descrição |

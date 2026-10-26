@@ -1,0 +1,23 @@
+# Local development only. Credentials below are throwaway values for a
+# container bound to localhost and must never be reused in other environments.
+name: brev-ly
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: brevly
+      POSTGRES_PASSWORD: brevly
+      POSTGRES_DB: brevly
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U brevly -d brevly"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

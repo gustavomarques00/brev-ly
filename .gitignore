@@ -1,0 +1,17 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Environment files (only *.example files are versioned)
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# Tooling artifacts
+.playwright-mcp/
+playwright-report/
+test-results/
+*.tsbuildinfo

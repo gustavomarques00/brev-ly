@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: brevly
+          POSTGRES_PASSWORD: brevly
+          POSTGRES_DB: brevly_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U brevly -d brevly_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Ephemeral CI service container; the test guard only accepts local *_test databases.
+      TEST_DATABASE_URL: postgresql://brevly:brevly@localhost:5432/brevly_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: server/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+      - name: Apply migrations (db:migrate)
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+
+      - run: pnpm test
+      - run: pnpm build
+
+      - name: Build Docker image
+        run: docker build -t brev-ly-server:ci .
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    env:
+      VITE_FRONTEND_URL: http://localhost:5173
+      VITE_BACKEND_URL: http://localhost:3333
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
